@@ -8,17 +8,26 @@ enum class LogLevel {
     TRACE, DEBUG, INFO, WARN, ERROR, FATAL
 };
 
+class LogPrinter {
+
+public:
+    virtual ~LogPrinter() { }
+    virtual void printLogMessage(LogLevel level, const std::string& tag, const char* msg, va_list va) = 0;
+
+};
+
 class Log {
 
 private:
+    LogPrinter* printer;
     std::string tag;
 
+    void print(LogLevel level, const char* msg, va_list va);
+
 public:
-    Log(std::string tag) : tag(tag) { }
+    Log(LogPrinter* printer, std::string tag) : printer(printer), tag(tag) { }
 
     const std::string& getTag() const { return tag; }
-
-    void print(LogLevel level, const char* msg, ...);
 
     void trace(const char* msg, ...);
     void debug(const char* msg, ...);

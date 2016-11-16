@@ -4,6 +4,11 @@
 
 using namespace tml;
 
+Mod::Mod(ModLoader* loader, std::unique_ptr<ModResources> resources) : resources(std::move(resources)),
+                                                                       meta(*resources), log(loader, meta.getName()) {
+
+}
+
 void Mod::load() {
     for (const ModCode& code : meta.getCode()) {
         ModCodeLoader* codeLoader = loader->getCodeLoader(code.loaderName);
@@ -20,4 +25,8 @@ void Mod::load() {
             loader->getLog().error("Failed to load mod code %s from the mod %s", code.codePath.c_str(),
                                    code.loaderName.c_str());
     }
+}
+
+void Mod::registerLogPrinter(std::unique_ptr<LogPrinter> printer) {
+    loader->registerLogPrinter(*this, std::move(printer));
 }

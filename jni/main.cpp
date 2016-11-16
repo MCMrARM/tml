@@ -32,6 +32,8 @@ JNIEXPORT void JNICALL Java_io_mrarm_tml_TML_nativeLoadMod(JNIEnv* env, jclass c
 
 __attribute__ ((visibility ("default"))) void mod_init() {
     modLoader = std::unique_ptr<ModLoader>(new ModLoader("."));
+    modLoader->addAllModsFromDirectory("tml/");
+    modLoader->resolveDependenciesAndLoad();
 }
 
 }
