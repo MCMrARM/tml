@@ -1,0 +1,7 @@
+# CLion project files
+CMakeLists.txt
+.idea
+
+# Android NDK build outputs
+obj/
+libs/
