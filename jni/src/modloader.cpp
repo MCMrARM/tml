@@ -19,10 +19,10 @@ void ModLoader::resolveDependenciesAndLoad() {
         for (auto& dep : mod.second->meta.dependencies) {
             if (mods.count(dep.id) > 0) {
                 Mod& depMod = *mods.at(dep.id);
-                if (depMod.getMeta().getVersion() >= dep.version) {
+                if (dep.isVersionSupported(depMod.getMeta().getVersion())) {
                     dep.mod = &depMod;
                 } else {
-                    loaderLog.error("Mod %s depends on a newer version of %s", mod.first.c_str(), dep.id.c_str());
+                    loaderLog.error("Mod %s depends on a unsupported version of %s", mod.first.c_str(), dep.id.c_str());
                 }
             } else {
                 loaderLog.error("Mod %s depends on %s but it is not installed", mod.first.c_str(), dep.id.c_str());
