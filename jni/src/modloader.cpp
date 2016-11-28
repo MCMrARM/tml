@@ -7,34 +7,64 @@ using namespace tml;
 
 const char* ModLoader::MODLOADER_PKGID = "io.mrarm:tml";
 
-void ModLoader::addMod(std::unique_ptr<ModResources> resources) {
-    std::unique_ptr<Mod> mod (new Mod(this, std::move(resources)));
-    if (mods.count(mod->getMeta().getId()) > 0)
-        throw std::runtime_error("The mod is trying to use a identifier already used by anther mod");
-    mods[mod->getMeta().getId()] = std::move(mod);
-}
-
-void ModLoader::resolveDependenciesAndLoad() {
-    for (const auto& mod : mods) {
-        for (auto& dep : mod.second->meta.dependencies) {
-            if (mods.count(dep.id) > 0) {
-                Mod& depMod = *mods.at(dep.id);
-                if (dep.isVersionSupported(depMod.getMeta().getVersion())) {
-                    dep.mod = &depMod;
-                } else {
-                    loaderLog.error("Mod %s depends on a unsupported version of %s", mod.first.c_str(), dep.id.c_str());
-                }
-            } else {
-                loaderLog.error("Mod %s depends on %s but it is not installed", mod.first.c_str(), dep.id.c_str());
+Mod* ModLoader::findMod(std::string id, const ModDependencyVersionList& versions) {
+    if (mods.count(id) <= 0)
+        return nullptr;
+    Mod* newestMod = nullptr;
+    ModVersion newestModVersion;
+    for (const auto& mod : mods.at(id)) {
+        if (versions.contains(mod.first)) {
+            if (newestMod == nullptr || mod.first > newestModVersion) {
+                newestMod = mod.second.get();
+                newestModVersion = mod.first;
             }
         }
     }
-    for (const auto& mod : mods) {
-        if (!mod.second->getMeta().areAllDependenciesResolved()) {
-            loaderLog.error("Not loading mod %s - failed to resolve some dependencies", mod.first.c_str());
-            continue;
+    return newestMod;
+}
+
+void ModLoader::addMod(std::unique_ptr<ModResources> resources) {
+    std::unique_ptr<Mod> mod(new Mod(this, std::move(resources)));
+    if (mods.count(mod->getMeta().getId()) > 0) {
+        Mod* secondMod = mods.at(mod->getMeta().getId()).begin()->second.get();
+        if (secondMod->getMeta().getVersion() == mod->getMeta().getVersion())
+            throw std::runtime_error("Trying to load a mod with an already used name (" + mod->getMeta().getId() +
+                                     ") and version");
+        if (!mods.at(mod->getMeta().getId()).begin()->second->getMeta().hasDeclaredMultiversionSupport() ||
+            !mod->getMeta().hasDeclaredMultiversionSupport())
+            throw std::runtime_error("Trying to register another version of " + mod->getMeta().getId() +
+                                     " without declaring multiversion support");
+    }
+    mods[mod->getMeta().getId()][mod->getMeta().getVersion()] = std::move(mod);
+}
+
+void ModLoader::resolveDependenciesAndLoad() {
+    for (const auto& modVersions : mods) {
+        for (const auto& mod : modVersions.second) {
+            for (auto& dep : mod.second->meta.dependencies) {
+                if (mods.count(dep.id) > 0) {
+                    Mod* depMod = findMod(dep.id, dep.version);
+                    if (depMod != nullptr) {
+                        dep.mod = depMod;
+                    } else {
+                        loaderLog.error("Mod %s depends on a unsupported version of %s", modVersions.first.c_str(),
+                                        dep.id.c_str());
+                    }
+                } else {
+                    loaderLog.error("Mod %s depends on %s but it is not installed", modVersions.first.c_str(),
+                                    dep.id.c_str());
+                }
+            }
         }
-        mod.second->load();
+    }
+    for (const auto& modVersions : mods) {
+        for (const auto& mod : modVersions.second) {
+            if (!mod.second->getMeta().areAllDependenciesResolved()) {
+                loaderLog.error("Not loading mod %s - failed to resolve some dependencies", modVersions.first.c_str());
+                continue;
+            }
+            mod.second->load();
+        }
     }
 }
 

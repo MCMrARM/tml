@@ -5,6 +5,7 @@
 #include <memory>
 #include <map>
 #include "log.h"
+#include "modmeta.h"
 
 namespace tml {
 
@@ -17,7 +18,7 @@ class ModLoader : public LogPrinter {
 
 private:
     std::map<std::string, std::pair<Mod*, std::unique_ptr<ModCodeLoader>>> loaders;
-    std::map<std::string, std::unique_ptr<Mod>> mods;
+    std::map<std::string, std::map<ModVersion, std::unique_ptr<Mod>>> mods;
     std::vector<std::pair<Mod*, std::unique_ptr<LogPrinter>>> logPrinters;
 
 protected:
@@ -39,6 +40,8 @@ public:
     virtual void printLogMessage(LogLevel level, const std::string& tag, const char* msg, va_list va);
 
     ModCodeLoader* getCodeLoader(std::string name);
+
+    Mod* findMod(std::string id, const ModDependencyVersionList& versions);
 
     void addMod(std::unique_ptr<ModResources> resources);
     void addModFromDirectory(std::string path);

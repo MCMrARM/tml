@@ -23,10 +23,12 @@ struct ModVersion {
     bool operator==(const ModVersion& v) const { return (v.major == major && v.minor == minor && v.patch == patch); }
     bool operator!=(const ModVersion& v) const { return !(v == *this); }
 
-    bool operator>(const ModVersion& v) const;
-    bool operator>=(const ModVersion&) const;
-    bool operator<(const ModVersion&) const;
-    bool operator<=(const ModVersion&) const;
+    bool operator>(const ModVersion& v) const {
+        return (major > v.major || (major == v.major && (minor > v.minor || (minor == v.minor && patch > v.patch))));
+    }
+    bool operator>=(const ModVersion& v) const { return (*this > v || *this == v); }
+    bool operator<(const ModVersion& v) const { return v > *this; }
+    bool operator<=(const ModVersion& v) const { return (*this < v || *this == v); }
 };
 
 struct ModDependencyVersion {
@@ -37,17 +39,22 @@ struct ModDependencyVersion {
     ModDependencyVersion(const char* str);
 };
 
+struct ModDependencyVersionList {
+    std::vector<ModDependencyVersion> list;
+
+    /**
+     * Checks if the specified version is a part of this dependency list
+     */
+    bool contains(const ModVersion& version) const;
+};
+
 struct ModDependency {
     std::string id;
-    std::vector<ModDependencyVersion> version;
+    ModDependencyVersionList version;
 
     /**
-     * Checks if the specified dependency version is supported by this mod.
-     */
-    bool isVersionSupported(const ModVersion& version) const;
-
-    /**
-     * This property will be assigned automatically by the mod manager after the dependency is resolved (it will never be null when loading your mod).
+     * This property will be assigned automatically by the mod manager after the dependency is resolved (it will never
+     * be null when loading your mod).
      */
     Mod* mod = nullptr;
 };
@@ -67,6 +74,7 @@ private:
     ModVersion version;
     std::vector<ModCode> code;
     std::vector<ModDependency> dependencies;
+    bool supportsMultiversion = false;
 
     friend class ModLoader;
 
@@ -108,6 +116,14 @@ public:
      * Returns the mod's dependencies (definied in the package.yaml file)
      */
     std::vector<ModDependency> const& getDependencies() const { return dependencies; }
+
+    /**
+     * Returns if the mod has declared multiversion support (if so, we assume that multiple versions of the mod can
+     * be loaded at the same time, and that the presence of multiple versions of the mod won't break anything).
+     * If your mod/library only adds ModAPI wrappers, you should declare multiversion support. If your mod adds
+     * GUI/items/blocks/etc. to the game then you should NOT declare multiversion support.
+     */
+    bool hasDeclaredMultiversionSupport() const { return supportsMultiversion; }
 
     /**
      * Returns if all of the mod's dependencies were resolved.

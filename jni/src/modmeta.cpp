@@ -41,6 +41,14 @@ ModDependencyVersion::ModDependencyVersion(const char* str) {
     to = from = getDepVersionPart(str);
 }
 
+bool ModDependencyVersionList::contains(const ModVersion& version) const {
+    for (const auto& ver : list) {
+        if (version >= ver.from && version <= ver.to)
+            return true;
+    }
+    return false;
+}
+
 int yamlCppStreamWrapper(void* data, unsigned char* buffer, size_t size, size_t* size_read) {
     std::istream* str = (std::istream*) data;
     if (str->eof()) {
@@ -57,6 +65,11 @@ int yamlCppStreamWrapper(void* data, unsigned char* buffer, size_t size, size_t*
 #define CString(keyNode, valueNode, yamlName, varName) \
     if (strcmp((char*) keyNode->data.scalar.value, yamlName) == 0 && valueNode->type == YAML_SCALAR_NODE) { \
         varName = std::string((char*) valueNode->data.scalar.value); \
+    }
+#define CBool(keyNode, valueNode, yamlName, varName) \
+    if (strcmp((char*) keyNode->data.scalar.value, yamlName) == 0 && valueNode->type == YAML_SCALAR_NODE) { \
+        char* _v = (char*) valueNode->data.scalar.value; \
+        varName = (strcmp(_v, "1") == 0 || strcmp(_v, "true") == 0); \
     }
 
 ModMeta::ModMeta(std::istream& ins) {
@@ -79,6 +92,7 @@ ModMeta::ModMeta(std::istream& ins) {
         else CString(keyNode, valueNode, "desc", desc)
         else CString(keyNode, valueNode, "author", author)
         else CString(keyNode, valueNode, "id", id)
+        else CBool(keyNode, valueNode, "supports-multiversion", supportsMultiversion)
         else if (strcmp((char*) keyNode->data.scalar.value, "version") == 0 && valueNode->type == YAML_SCALAR_NODE) {
             version = ModVersion((char*) valueNode->data.scalar.value);
         } else if (strcmp((char*) keyNode->data.scalar.value, "code") == 0 && valueNode->type == YAML_SEQUENCE_NODE) {
@@ -116,7 +130,7 @@ ModMeta::ModMeta(std::istream& ins) {
                         throw std::runtime_error("A dependency's version is not specified");
                     ModDependency dep;
                     dep.id = std::string(depStr, (size_t) (depVer - depStr));
-                    dep.version.push_back(ModDependencyVersion(depVer + 1));
+                    dep.version.list.push_back(ModDependencyVersion(depVer + 1));
                     dependencies.push_back(dep);
                 } else if (depNode->type == YAML_MAPPING_NODE) {
                     ModDependency dep;
@@ -133,20 +147,21 @@ ModMeta::ModMeta(std::istream& ins) {
                         else if (strcmp((char*) keyNode2->data.scalar.value, "version") == 0 ||
                                  strcmp((char*) keyNode2->data.scalar.value, "versions") == 0) {
                             if (valueNode2->type == YAML_SCALAR_NODE) {
-                                dep.version.push_back(ModDependencyVersion((char*) valueNode2->data.scalar.value));
+                                dep.version.list.push_back(ModDependencyVersion((char*) valueNode2->data.scalar.value));
                             } else if (valueNode2->type == YAML_SEQUENCE_NODE) {
                                 for (yaml_node_item_t* itm2 = valueNode2->data.sequence.items.start;
                                      itm2 < valueNode2->data.sequence.items.top; itm2++) {
                                     yaml_node_t* depVerNode = yaml_document_get_node(&document, *itm2);
                                     if (depVerNode->type == YAML_SCALAR_NODE)
-                                        dep.version.push_back(ModDependencyVersion((char*) depVerNode->data.scalar.value));
+                                        dep.version.list.push_back(
+                                                ModDependencyVersion((char*) depVerNode->data.scalar.value));
                                 }
                             }
                         }
                     }
                     if (dep.id.length() == 0)
                         continue;
-                    if (dep.version.size() == 0)
+                    if (dep.version.list.size() == 0)
                         throw std::runtime_error("A dependency's version is not specified");
                     dependencies.push_back(std::move(dep));
                 }
