@@ -82,13 +82,23 @@ void ModLoader::resolveDependenciesAndLoad() {
             }
         }
     }
-    for (const auto& modVersions : mods) {
-        for (const auto& mod : modVersions.second) {
-            if (!mod.second->getMeta().areAllDependenciesResolved()) {
+    loaderLog.trace("Loading mod code...");
+    for (auto& modVersions : mods) {
+        for (auto it = modVersions.second.begin(); it != modVersions.second.end(); ) {
+            if (!it->second->getMeta().areAllDependenciesResolved()) {
                 loaderLog.error("Not loading mod %s - failed to resolve some dependencies", modVersions.first.c_str());
+                // remove it from the list
+                it = modVersions.second.erase(it);
                 continue;
             }
-            mod.second->load();
+            it->second->load();
+            it++;
+        }
+    }
+    loaderLog.trace("Initializing mods...");
+    for (const auto& modVersions : mods) {
+        for (const auto& mod : modVersions.second) {
+            mod.second->init();
         }
     }
 }

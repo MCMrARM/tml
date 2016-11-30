@@ -23,6 +23,7 @@ private:
     std::vector<std::unique_ptr<ModLoadedCode>> loadedCode;
 
     void load();
+    void init();
 
 public:
     Mod(ModLoader* loader, std::unique_ptr<ModResources> resources);

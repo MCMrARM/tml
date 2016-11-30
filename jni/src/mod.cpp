@@ -28,6 +28,12 @@ void Mod::load() {
     }
 }
 
+void Mod::init() {
+    for (auto& code : loadedCode) {
+        code->init();
+    }
+}
+
 void Mod::registerLogPrinter(std::unique_ptr<LogPrinter> printer) {
     loader->registerLogPrinter(*this, std::move(printer));
 }
