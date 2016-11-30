@@ -32,7 +32,7 @@ public:
     NativeModCodeLoader(ModLoader& loader, std::string libsPrivatePath) : loader(loader),
                                                                           libsPrivatePath(libsPrivatePath) { }
 
-    virtual ~NativeModCodeLoader();
+    virtual ~NativeModCodeLoader() { }
 
     virtual std::unique_ptr<ModLoadedCode> loadCode(Mod& mod, std::string path);
 

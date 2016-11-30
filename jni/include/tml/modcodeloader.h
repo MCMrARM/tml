@@ -28,7 +28,7 @@ public:
 class ModCodeLoader {
 
 public:
-    virtual ~ModCodeLoader() = 0;
+    virtual ~ModCodeLoader() { }
     virtual std::unique_ptr<ModLoadedCode> loadCode(Mod& mod, std::string path) = 0;
 
 };

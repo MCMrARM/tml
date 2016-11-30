@@ -2,10 +2,19 @@
 
 #include <android/log.h>
 #include <tml/mod.h>
+#include <sys/stat.h>
+#include "fileutil.h"
+#include "nativemodcodeloader.h"
 
 using namespace tml;
 
 const char* ModLoader::MODLOADER_PKGID = "io.mrarm:tml";
+
+ModLoader::ModLoader(std::string internalDir) : internalDir(internalDir), loaderLog(this, "TML") {
+    mkdir(internalDir.c_str(), 0700);
+    mkdir((internalDir + "mods/").c_str(), 0700);
+    loaders["native"] = {nullptr, std::unique_ptr<ModCodeLoader>(new NativeModCodeLoader(*this, internalDir + "cache/native"))};
+}
 
 Mod* ModLoader::findMod(std::string id, const ModDependencyVersionList& versions) {
     if (mods.count(id) <= 0)
@@ -36,6 +45,18 @@ void ModLoader::addMod(std::unique_ptr<ModResources> resources) {
                                      " without declaring multiversion support");
     }
     mods[mod->getMeta().getId()][mod->getMeta().getVersion()] = std::move(mod);
+}
+
+void ModLoader::addAllModsFromDirectory(std::string path) {
+    loaderLog.info("Loading all mod from directory: %s", path.c_str());
+    for (auto& f : FileUtil::getFilesIn(path)) {
+        if (f.isDirectory) {
+            loaderLog.info("Loading mod from directory: %s", f.name.c_str());
+            std::unique_ptr<ModResources> res(new DirectoryModResources(path + "/" + f.name));
+            addMod(std::move(res));
+        }
+        // TODO: load zipped mods
+    }
 }
 
 void ModLoader::resolveDependenciesAndLoad() {

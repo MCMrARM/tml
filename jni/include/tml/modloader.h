@@ -22,6 +22,7 @@ private:
     std::vector<std::pair<Mod*, std::unique_ptr<LogPrinter>>> logPrinters;
 
 protected:
+    std::string internalDir;
     Log loaderLog;
 
     friend class Mod;

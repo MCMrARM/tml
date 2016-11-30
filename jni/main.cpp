@@ -1,6 +1,8 @@
 #include <jni.h>
 #include <android/log.h>
 #include <dlfcn.h>
+#include <unistd.h>
+#include <tml/mod.h>
 #include <tml/modloader.h>
 
 using namespace tml;
@@ -31,8 +33,11 @@ JNIEXPORT void JNICALL Java_io_mrarm_tml_TML_nativeLoadMod(JNIEnv* env, jclass c
 }
 
 __attribute__ ((visibility ("default"))) void mod_init() {
-    modLoader = std::unique_ptr<ModLoader>(new ModLoader("."));
-    modLoader->addAllModsFromDirectory("tml/");
+    char cwd[512];
+    getcwd(cwd, sizeof(cwd));
+
+    modLoader = std::unique_ptr<ModLoader>(new ModLoader(std::string(cwd) + "/tml/"));
+    modLoader->addAllModsFromDirectory("tml/mods/");
     modLoader->resolveDependenciesAndLoad();
 }
 

@@ -2,6 +2,7 @@
 
 #include <string>
 #include <vector>
+#include <memory>
 
 namespace tml {
 
@@ -20,6 +21,11 @@ public:
     virtual std::unique_ptr<std::istream> open(std::string path) = 0;
 
     /**
+     * Checks if the specific file exists.
+     */
+    virtual bool contains(std::string path) = 0;
+
+    /**
      * Return the last modification time. If you aren't able to determine this, return 0.
      * This is only important when getting ready for production. In testing it should be fast enough to return zero.
      */
@@ -36,6 +42,8 @@ public:
     DirectoryModResources(std::string basePath) : basePath(basePath) { }
 
     virtual std::unique_ptr<std::istream> open(std::string path);
+
+    virtual bool contains(std::string path);
 
     virtual long long getLastModifyTime(std::string path);
 

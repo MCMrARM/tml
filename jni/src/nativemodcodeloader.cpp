@@ -48,7 +48,7 @@ bool NativeModCodeLoader::extractIfNeeded(Mod& mod, std::string path, std::strin
     // extract the file!
     calculatedSha512 = FileUtil::calculateSHA512(*mod.getResources().open(path), sha512);
     if (!calculatedSha512) {
-        loader.getLog().fatal("Failed to load native mod code %s from mod %s (%s)", path.c_str(),
+        loader.getLog().fatal("Failed to load native mod code '%s' from mod %s (%s)", path.c_str(),
                                mod.getMeta().getName().c_str(), mod.getMeta().getId().c_str());
         return false;
     }
@@ -89,15 +89,35 @@ bool NativeModCodeLoader::extractIfNeeded(Mod& mod, std::string path, std::strin
 }
 
 std::unique_ptr<ModLoadedCode> NativeModCodeLoader::loadCode(Mod& mod, std::string path) {
-    loader.getLog().info("Loading native mod code %s from mod %s (%s)", path.c_str(), mod.getMeta().getName().c_str(),
+    // possible formats: native/ARCH/libPATH.so native/ARCH/PATH.so native/ARCH/PATH
+#ifdef __i386
+    std::string prefix = "native/x86/";
+#else
+    std::string prefix = "native/armeabi-v7a/";
+#endif
+    if (mod.getResources().contains(prefix + path))
+        path = prefix + "lib" + path + ".so";
+    else if (mod.getResources().contains(prefix + path + ".so"))
+        path = prefix + path + ".so";
+    else if (mod.getResources().contains(prefix + "lib" + path + ".so"))
+        path = prefix + "lib" + path + ".so";
+    else {
+        loader.getLog().error("Cannot find native mod code '%s' from mod %s (%s)", path.c_str(),
+                              mod.getMeta().getName().c_str(), mod.getMeta().getId().c_str());
+        return std::unique_ptr<ModLoadedCode>();
+    }
+    loader.getLog().info("Loading native mod code '%s' from mod %s (%s)", path.c_str(), mod.getMeta().getName().c_str(),
                           mod.getMeta().getId().c_str());
     std::string localPath = libsPrivatePath + "/" + mod.getMeta().getId() + "/" + path;
+    FileUtil::createDirs(FileUtil::getParent(localPath));
     if (!extractIfNeeded(mod, path, localPath))
         return std::unique_ptr<ModLoadedCode>();
     loader.getLog().trace("Loading native mod code: %s", localPath.c_str());
     void* lib = dlopen(localPath.c_str(), RTLD_LAZY);
-    if (lib == nullptr)
+    if (lib == nullptr) {
+        loader.getLog().error("Failed to load native mod code: %s", dlerror());
         return std::unique_ptr<ModLoadedCode>();
+    }
     return std::unique_ptr<ModLoadedCode>(new NativeModLoadedCode(mod, lib));
 }
 
