@@ -31,6 +31,12 @@ ModVersion getDepVersionPart(const char* str) {
 
 }
 
+std::string ModVersion::toString() const {
+    char buf[512];
+    snprintf(buf, sizeof(buf), "%i.%i.%i", major, minor, patch);
+    return std::string(buf);
+}
+
 ModDependencyVersion::ModDependencyVersion(const char* str) {
     const char* strTo = strchr(str, '-');
     if (strTo != nullptr) {

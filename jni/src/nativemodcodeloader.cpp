@@ -49,11 +49,11 @@ bool NativeModCodeLoader::extractIfNeeded(Mod& mod, std::string path, std::strin
     calculatedSha512 = FileUtil::calculateSHA512(*mod.getResources().open(path), sha512);
     if (!calculatedSha512) {
         loader.getLog().fatal("Failed to load native mod code '%s' from mod %s (%s)", path.c_str(),
-                               mod.getMeta().getName().c_str(), mod.getMeta().getId().c_str());
+                              mod.getMeta().getName().c_str(), mod.getMeta().getId().c_str());
         return false;
     }
     {
-        std::ofstream file (localPath);
+        std::ofstream file(localPath);
         auto stream = mod.getResources().open(path);
         std::streamsize n;
         char buffer[8 * 1024];
@@ -107,8 +107,9 @@ std::unique_ptr<ModLoadedCode> NativeModCodeLoader::loadCode(Mod& mod, std::stri
         return std::unique_ptr<ModLoadedCode>();
     }
     loader.getLog().info("Loading native mod code '%s' from mod %s (%s)", path.c_str(), mod.getMeta().getName().c_str(),
-                          mod.getMeta().getId().c_str());
-    std::string localPath = libsPrivatePath + "/" + mod.getMeta().getId() + "/" + path;
+                         mod.getMeta().getId().c_str());
+    std::string localPath =
+            libsPrivatePath + "/" + mod.getMeta().getId() + "/" + mod.getMeta().getVersion().toString() + "/" + path;
     FileUtil::createDirs(FileUtil::getParent(localPath));
     if (!extractIfNeeded(mod, path, localPath))
         return std::unique_ptr<ModLoadedCode>();
@@ -122,13 +123,13 @@ std::unique_ptr<ModLoadedCode> NativeModCodeLoader::loadCode(Mod& mod, std::stri
 }
 
 void NativeModLoadedCode::init() {
-    int (*initSym)(Mod&) = (int (*)(Mod&)) dlsym(lib, "tml_init");
+    int (* initSym)(Mod&) = (int (*)(Mod&)) dlsym(lib, "tml_init");
     if (initSym != nullptr)
         initSym(mod);
 }
 
 void NativeModLoadedCode::onMinecraftInitialized(MinecraftClient* minecraft) {
-    int (*mcSym)(Mod&, MinecraftClient*) = (int (*)(Mod&, MinecraftClient*)) dlsym(lib, "tml_mcinit");
+    int (* mcSym)(Mod&, MinecraftClient*) = (int (*)(Mod&, MinecraftClient*)) dlsym(lib, "tml_mcinit");
     if (mcSym != nullptr)
         mcSym(mod, minecraft);
 }

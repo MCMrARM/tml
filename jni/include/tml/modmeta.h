@@ -20,6 +20,7 @@ struct ModVersion {
         this->minor = minor;
         this->patch = patch;
     }
+    std::string toString() const;
     bool operator==(const ModVersion& v) const { return (v.major == major && v.minor == minor && v.patch == patch); }
     bool operator!=(const ModVersion& v) const { return !(v == *this); }
 

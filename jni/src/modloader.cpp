@@ -47,13 +47,17 @@ void ModLoader::addMod(std::unique_ptr<ModResources> resources) {
     mods[mod->getMeta().getId()][mod->getMeta().getVersion()] = std::move(mod);
 }
 
+void ModLoader::addModFromDirectory(std::string path) {
+    loaderLog.info("Loading mod from directory: %s", path.c_str());
+    std::unique_ptr<ModResources> res(new DirectoryModResources(path));
+    addMod(std::move(res));
+}
+
 void ModLoader::addAllModsFromDirectory(std::string path) {
     loaderLog.info("Loading all mod from directory: %s", path.c_str());
     for (auto& f : FileUtil::getFilesIn(path)) {
         if (f.isDirectory) {
-            loaderLog.info("Loading mod from directory: %s", f.name.c_str());
-            std::unique_ptr<ModResources> res(new DirectoryModResources(path + "/" + f.name));
-            addMod(std::move(res));
+            addModFromDirectory(path + "/" + f.name);
         }
         // TODO: load zipped mods
     }
