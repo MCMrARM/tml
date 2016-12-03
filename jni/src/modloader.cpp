@@ -5,6 +5,7 @@
 #include <sys/stat.h>
 #include "fileutil.h"
 #include "nativemodcodeloader.h"
+#include "hookmanager.h"
 
 using namespace tml;
 
@@ -14,6 +15,11 @@ ModLoader::ModLoader(std::string internalDir) : internalDir(internalDir), loader
     mkdir(internalDir.c_str(), 0700);
     mkdir((internalDir + "mods/").c_str(), 0700);
     loaders["native"] = {nullptr, std::unique_ptr<ModCodeLoader>(new NativeModCodeLoader(*this, internalDir + "cache/native"))};
+    hookManager = new HookManager(this);
+}
+
+ModLoader::~ModLoader() {
+    delete hookManager;
 }
 
 Mod* ModLoader::findMod(std::string id, const ModDependencyVersionList& versions) {
@@ -64,6 +70,8 @@ void ModLoader::addAllModsFromDirectory(std::string path) {
 }
 
 void ModLoader::resolveDependenciesAndLoad() {
+    hookManager->updateLoadedLibs();
+
     for (const auto& modVersions : mods) {
         for (const auto& mod : modVersions.second) {
             for (auto& dep : mod.second->meta.dependencies) {

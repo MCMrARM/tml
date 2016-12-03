@@ -13,6 +13,7 @@ class Mod;
 class ModResources;
 class ModCodeLoader;
 class NativeModCodeLoader;
+class HookManager;
 
 class ModLoader : public LogPrinter {
 
@@ -24,6 +25,7 @@ private:
 protected:
     std::string internalDir;
     Log loaderLog;
+    HookManager* hookManager;
 
     friend class Mod;
 
@@ -35,6 +37,8 @@ public:
     static const char* MODLOADER_PKGID;
 
     ModLoader(std::string internalDir);
+
+    ~ModLoader();
 
     inline Log& getLog() { return loaderLog; }
 
