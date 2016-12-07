@@ -18,10 +18,9 @@ struct ExtractedModInfo_v1 {
 bool NativeModCodeLoader::extractIfNeeded(Mod& mod, std::string path, std::string localPath) {
     char sha512[64];
     bool calculatedSha512;
-
     std::string infoPath = localPath + ".emi";
     // Check if we need to extract the file (it generally will be handled by the hub)
-    if (FileUtil::fileExists(localPath)) {
+    if (FileUtil::fileExists(localPath) && FileUtil::fileExists(infoPath)) {
         // Some version has already been extracted; check it
         FILE* file = fopen(infoPath.c_str(), "r");
         int version = -1;
@@ -58,7 +57,7 @@ bool NativeModCodeLoader::extractIfNeeded(Mod& mod, std::string path, std::strin
         std::streamsize n;
         char buffer[8 * 1024];
         stream->read(buffer, sizeof(buffer));
-        while (*stream || (n = stream->gcount()) != 0) {
+        while (*stream && (n = stream->gcount()) != 0) {
             file.write(buffer, n);
             stream->read(buffer, 1024);
         }
@@ -67,7 +66,7 @@ bool NativeModCodeLoader::extractIfNeeded(Mod& mod, std::string path, std::strin
     {
         char sha512a[64];
         if (!FileUtil::calculateSHA512(localPath, sha512a) || memcmp(sha512, sha512a, sizeof(sha512)) != 0) {
-            loader.getLog().fatal("Failed to extract the file (checksum mismatch)");
+            loader.getLog().fatal("Failed to extract the file (checksum mismatch) %i %i", sha512[0], sha512a[0]);
             return false;
         }
     }
@@ -78,7 +77,7 @@ bool NativeModCodeLoader::extractIfNeeded(Mod& mod, std::string path, std::strin
         int metaVersion = 1;
         ExtractedModInfo_v1 metaInfo;
         memcpy(metaInfo.sha512, sha512, sizeof(metaInfo.sha512));
-        metaInfo.timestamp = FileUtil::getTimestamp(localPath);
+        metaInfo.timestamp = (long long) FileUtil::getTimestamp(localPath);
         metaInfo.sourceTimestamp = mod.getResources().getLastModifyTime(path);
         fwrite(&metaVersion, sizeof(int), 1, file);
         fwrite(&metaInfo, sizeof(ExtractedModInfo_v1), 1, file);

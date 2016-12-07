@@ -62,7 +62,7 @@ bool FileUtil::calculateSHA512(std::istream& stream, char* out) {
     std::streamsize n;
     char buffer[8 * 1024];
     stream.read(buffer, sizeof(buffer));
-    while (stream || (n = stream.gcount()) != 0) {
+    while (stream && (n = stream.gcount()) != 0) {
         KeccakWidth1600_SpongeAbsorb(&sponge, (unsigned char*) buffer, (size_t) n);
         stream.read(buffer, 1024);
     }
