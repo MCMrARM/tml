@@ -1,6 +1,7 @@
 #include <tml/modloader.h>
 
 #include <android/log.h>
+#include <dlfcn.h>
 #include <tml/mod.h>
 #include <sys/stat.h>
 #include "fileutil.h"
@@ -70,8 +71,6 @@ void ModLoader::addAllModsFromDirectory(std::string path) {
 }
 
 void ModLoader::resolveDependenciesAndLoad() {
-    hookManager->updateLoadedLibs();
-
     for (const auto& modVersions : mods) {
         for (const auto& mod : modVersions.second) {
             for (auto& dep : mod.second->meta.dependencies) {
@@ -103,6 +102,11 @@ void ModLoader::resolveDependenciesAndLoad() {
             it++;
         }
     }
+
+    loaderLog.trace("Initializing hook system...");
+    mcpeLib = dlopen("libminecraftpe.so", RTLD_LAZY);
+    hookManager->updateLoadedLibs();
+
     loaderLog.trace("Initializing mods...");
     for (const auto& modVersions : mods) {
         for (const auto& mod : modVersions.second) {

@@ -1,5 +1,6 @@
 #include "hookmanager.h"
 
+#include <set>
 #include <dlfcn.h>
 #include <sys/mman.h>
 #include <tml/modloader.h>
@@ -79,6 +80,8 @@ void HookManager::updateLoadedLibs() {
         if (name[0] != '/')
             continue; // we're not interested in this map
         log.trace("Found map: %s %c%c%c %lx-%lx", name, r, w, x, start, end);
+        if (memcmp(name, "/usr/lib/valgrind/", 18) == 0)
+            continue;
         std::string nameStd(name);
         if (libsToFind.count(nameStd) > 0)
             libsToFind.erase(nameStd);
@@ -216,30 +219,39 @@ void HookManager::HookSymbol::useSymbol(HookManager* mgr, void* newSym) {
     for (auto& up : usage) {
         if (mgr->libraries.count(up.first) <= 0)
             continue;
-        for (void* u : up.second) {
+        for (void* u : up.second)
             *((void**) u) = newSym;
-        }
     }
+    for (void** u : customRefs)
+        *u = newSym;
 }
 
-tml::HookManager::HookSymbol* HookManager::getSymbol(void* lib, std::string const& str) {
+tml::HookManager::HookSymbol* HookManager::getSymbol(void* lib, std::string const& str, bool initialize) {
     SymbolLibNameDesc p = {lib, str};
-    if (symbols.count(p) > 0)
-        return symbols.at(p);
-    void* sym = dlsym_weak(lib, str.c_str());
 
-    HookSymbol* hookSymbol = new HookSymbol();
-    hookSymbol->libNameDesc = p;
-    hookSymbol->usedSymbol = hookSymbol->originalSym = sym;
+    HookSymbol* hookSymbol;
+    if (symbols.count(p) > 0) {
+        hookSymbol = symbols.at(p);
+        if (hookSymbol->initialized)
+            return hookSymbol;
+    } else {
+        hookSymbol = new HookSymbol();
+
+        void* sym = dlsym_weak(lib, str.c_str());
+        hookSymbol->libNameDesc = p;
+        hookSymbol->usedSymbol = hookSymbol->originalSym = sym;
+    }
+
     for (auto& lp : libraries) {
         soinfo* si = (soinfo*) lp.second->ptr;
-        findSymbolAndAddTo(hookSymbol->usage[lp.second->ptr], si->base, lp.second->gotOff, lp.second->gotSize, sym);
+        findSymbolAndAddTo(hookSymbol->usage[lp.second->ptr], si->base, lp.second->gotOff, lp.second->gotSize,
+                           hookSymbol->originalSym);
         findSymbolAndAddTo(hookSymbol->usage[lp.second->ptr], si->base, lp.second->gotPltOff, lp.second->gotPltSize,
-                           sym);
+                           hookSymbol->originalSym);
         findSymbolAndAddTo(hookSymbol->usage[lp.second->ptr], si->base, lp.second->dataRelRoOff,
-                           lp.second->dataRelRoSize,
-                           sym);
+                           lp.second->dataRelRoSize, hookSymbol->originalSym);
     }
+    hookSymbol->initialized = true;
     symbols[p] = hookSymbol;
     return hookSymbol;
 }
@@ -249,10 +261,11 @@ void HookManager::destroySymbol(HookSymbol* symbol) {
     for (auto& up : symbol->usage) {
         if (libraries.count(up.first) <= 0)
             continue;
-        for (auto& u : up.second) {
+        for (auto& u : up.second)
             hookedSymbolRefs.erase(u);
-        }
     }
+    for (auto& u : symbol->customRefs)
+        customRefToSymbol.erase(u);
     symbols.erase({symbol->libNameDesc.lib, symbol->libNameDesc.name});
     delete symbol;
 }
@@ -273,10 +286,15 @@ tml::HookManager::HookInfo* HookManager::hook(void* lib, std::string const& sym,
 
 void HookManager::unhook(HookInfo* hook) {
     if (hook->child == nullptr) {
-        if (hook->parent == nullptr)
-            destroySymbol(hook->symbol);
-        else
+        if (hook->parent == nullptr) {
+            if (hook->symbol->customRefs.size() == 0) {
+                destroySymbol(hook->symbol);
+            } else {
+                hook->symbol->useSymbol(this, hook->symbol->originalSym);
+            }
+        } else {
             hook->symbol->useSymbol(this, hook->parent->symbol);
+        }
     } else {
         hook->child->parent = hook->parent;
         if (hook->parent != nullptr) {
@@ -287,4 +305,21 @@ void HookManager::unhook(HookInfo* hook) {
         }
     }
     delete hook;
+}
+
+void HookManager::addCustomRef(void** ref, void* lib, std::string const& str) {
+    removeCustomRef(ref);
+    HookSymbol* symbol = getSymbol(lib, str, false);
+    symbol->customRefs.insert(ref);
+    customRefToSymbol[ref] = symbol;
+}
+
+void HookManager::removeCustomRef(void** ref) {
+    if (customRefToSymbol.count(ref) > 0) {
+        HookSymbol* sym = customRefToSymbol.at(ref);
+        customRefToSymbol.erase(ref);
+        sym->customRefs.erase(ref);
+        if (sym->hook == nullptr && sym->customRefs.size() == 0)
+            destroySymbol(sym);
+    }
 }

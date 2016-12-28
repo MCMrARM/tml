@@ -35,9 +35,12 @@ bool NativeModCodeLoader::extractIfNeeded(Mod& mod, std::string path, std::strin
                     // the file gets updated, not to securely protect it
                     return true;
                 }
-                // we need to calculate SHA512
-                calculatedSha512 = FileUtil::calculateSHA512(localPath, sha512);
-                if (calculatedSha512 && memcmp(sha512, modInfo.sha512, sizeof(sha512)) == 0) {
+                // calculate SHA512
+                char sha512a[64];
+                if (FileUtil::calculateSHA512(*mod.getResources().open(path), sha512a) &&
+                    FileUtil::calculateSHA512(localPath, sha512) &&
+                    memcmp(sha512, modInfo.sha512, sizeof(sha512)) == 0 &&
+                    memcmp(sha512, sha512a, sizeof(sha512)) == 0) {
                     // the checksum is correct
                     return true;
                 }
@@ -66,7 +69,7 @@ bool NativeModCodeLoader::extractIfNeeded(Mod& mod, std::string path, std::strin
     {
         char sha512a[64];
         if (!FileUtil::calculateSHA512(localPath, sha512a) || memcmp(sha512, sha512a, sizeof(sha512)) != 0) {
-            loader.getLog().fatal("Failed to extract the file (checksum mismatch) %i %i", sha512[0], sha512a[0]);
+            loader.getLog().fatal("Failed to extract the file (checksum mismatch)");
             return false;
         }
     }

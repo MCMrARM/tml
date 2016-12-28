@@ -4,6 +4,7 @@
 #include "modmeta.h"
 #include "modresources.h"
 #include "modcodeloader.h"
+#include "modstatichook.h"
 #include "log.h"
 
 namespace tml {
@@ -16,14 +17,25 @@ class Mod {
 private:
     friend class ModLoader;
 
+    friend class StaticHookManager;
+
+    struct QueuedHook {
+        std::string lib, sym;
+        void* func;
+        void** org;
+    };
+
     ModLoader* loader;
     std::unique_ptr<ModResources> resources;
     ModMeta meta;
     Log log;
     std::vector<std::unique_ptr<ModLoadedCode>> loadedCode;
+    std::vector<QueuedHook> queuedHooks;
 
     void load();
     void init();
+
+    void queueHook(const std::string& lib, const std::string& sym, void* func, void** orig);
 
 public:
     Mod(ModLoader* loader, std::unique_ptr<ModResources> resources);
@@ -44,14 +56,39 @@ public:
     Log& getLog() { return log; }
 
     /**
+     * Returns a pointer to MCPE's library.
+     */
+    void* getMCPELibrary() const;
+
+    /**
      * Hooks a function and returns a pointer using which you can remove the hook.
      */
-    ModHook* hook(void* sym, void* func, void** orig);
+    ModHook* hook(void* lib, const char* str, void* func, void** orig);
+
+    /**
+     * Hooks a MCPE function and returns a pointer using which you can remove the hook.
+     */
+    ModHook* hook(const char* str, void* func, void** orig);
 
     /**
      * Removes a hook.
      */
     void removeHook(ModHook* h);
+
+    /**
+     * Resolves a symbol from the specified library and stores it in the specified pointer.
+     */
+    void resolveSymbol(void* lib, const char* str, void** ptr);
+
+    /**
+     * Resolves a MCPE symbol and stores it in the specified pointer.
+     */
+    void resolveSymbol(const char* str, void** ptr);
+
+    /**
+     * Removes a symbol reference.
+     */
+    void releaseSymbolRef(void** ptr);
 
     /**
      * Registers a log printer (useful if you want to for example upload the logs to computer for debugging).

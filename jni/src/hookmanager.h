@@ -2,7 +2,7 @@
 
 #include <string>
 #include <vector>
-#include <set>
+#include <unordered_set>
 #include <unordered_map>
 #include <sys/exec_elf.h>
 #include <tml/log.h>
@@ -64,10 +64,13 @@ public:
     struct HookSymbol {
         SymbolLibNameDesc libNameDesc;
 
+        bool initialized = false; // this will be false when only adding a custom ref
+
         void* originalSym = nullptr;
         void* usedSymbol = nullptr;
 
         std::unordered_map<void*, std::vector<void*>> usage; // pairs of library pointer => pointers in the GOT table
+        std::unordered_set<void**> customRefs;
 
         HookInfo* hook = nullptr;
 
@@ -79,7 +82,8 @@ public:
     std::unordered_map<void*, LibraryInfo*> libraries; // library => LibraryInfo
     std::unordered_map<std::string, LibraryInfo*> librariesByPath; // library path => LibraryInfo
     std::unordered_map<SymbolLibNameDesc, HookSymbol*, SymbolLibNameDescHash> symbols; // { library, symbol name } => HookSymbol*
-    std::set<void*> hookedSymbolRefs;
+    std::unordered_map<void**, HookSymbol*> customRefToSymbol;
+    std::unordered_set<void*> hookedSymbolRefs;
 
     void updateLoadedLibs();
 
@@ -87,13 +91,17 @@ public:
 
     void destroyLibraryInfo(LibraryInfo* libraryInfo);
 
-    HookSymbol* getSymbol(void* lib, std::string const& str);
+    HookSymbol* getSymbol(void* lib, std::string const& str, bool initialize = true);
 
     void destroySymbol(HookSymbol* symbol);
 
     HookInfo* hook(void* lib, std::string const& sym, void* override, void** org);
 
     void unhook(HookInfo* hook);
+
+    void addCustomRef(void** ref, void* lib, std::string const& str);
+
+    void removeCustomRef(void** ref);
 
 };
 

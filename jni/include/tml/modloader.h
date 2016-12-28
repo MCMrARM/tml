@@ -26,6 +26,7 @@ protected:
     std::string internalDir;
     Log loaderLog;
     HookManager* hookManager;
+    void* mcpeLib;
 
     friend class Mod;
 
