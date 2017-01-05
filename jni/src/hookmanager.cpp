@@ -235,9 +235,10 @@ tml::HookManager::HookSymbol* HookManager::getSymbol(void* lib, std::string cons
         if (hookSymbol->initialized)
             return hookSymbol;
     } else {
-        hookSymbol = new HookSymbol();
-
         void* sym = dlsym_weak(lib, str.c_str());
+        if (sym == nullptr)
+            throw std::runtime_error("Failed to find symbol " + str);
+        hookSymbol = new HookSymbol();
         hookSymbol->libNameDesc = p;
         hookSymbol->usedSymbol = hookSymbol->originalSym = sym;
     }
