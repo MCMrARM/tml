@@ -55,14 +55,14 @@ bool NativeModCodeLoader::extractIfNeeded(Mod& mod, std::string path, std::strin
         return false;
     }
     {
-        std::ofstream file(localPath);
+        std::ofstream file(localPath, std::ofstream::binary);
         auto stream = mod.getResources().open(path);
-        std::streamsize n;
         char buffer[8 * 1024];
-        stream->read(buffer, sizeof(buffer));
-        while (*stream && (n = stream->gcount()) != 0) {
-            file.write(buffer, n);
-            stream->read(buffer, 1024);
+        while (stream->good()) {
+            stream->read(buffer, sizeof(buffer));
+            std::streamsize n = stream->gcount();
+            if (n > 0)
+                file.write(buffer, n);
         }
     }
     // verify that the file was successfully extracted

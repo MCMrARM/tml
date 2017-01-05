@@ -59,19 +59,19 @@ std::vector<FileUtil::DirectoryFile> FileUtil::getFilesIn(std::string path, bool
 bool FileUtil::calculateSHA512(std::istream& stream, char* out) {
     KeccakWidth1600_SpongeInstance sponge;
     KeccakWidth1600_SpongeInitialize(&sponge, 576, 1024);
-    std::streamsize n;
     char buffer[8 * 1024];
-    stream.read(buffer, sizeof(buffer));
-    while (stream && (n = stream.gcount()) != 0) {
-        KeccakWidth1600_SpongeAbsorb(&sponge, (unsigned char*) buffer, (size_t) n);
-        stream.read(buffer, 1024);
+    while (stream.good()) {
+        stream.read(buffer, sizeof(buffer));
+        std::streamsize n = stream.gcount();
+        if (n > 0)
+            KeccakWidth1600_SpongeAbsorb(&sponge, (unsigned char*) buffer, (size_t) n);
     }
     KeccakWidth1600_SpongeSqueeze(&sponge, (unsigned char*) out, 512/8);
     return true;
 }
 
 bool FileUtil::calculateSHA512(std::string path, char* out) {
-    std::ifstream fs (path);
+    std::ifstream fs (path, std::ifstream::binary);
     if (!fs)
         return false;
     return calculateSHA512(fs, out);
