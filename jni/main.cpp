@@ -8,8 +8,14 @@
 using namespace tml;
 
 JavaVM* javaVM;
-void* nativeLibMCPE;
 std::unique_ptr<ModLoader> modLoader;
+
+static std::string jniString(JNIEnv* env, jstring str) {
+    const char* cstr = env->GetStringUTFChars(str, NULL);
+    std::string ret (cstr);
+    env->ReleaseStringUTFChars(str, cstr);
+    return ret;
+}
 
 extern "C" {
 
@@ -22,14 +28,18 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
         vm->AttachCurrentThread(&env, nullptr);
     }
 
-    nativeLibMCPE = dlopen("libminecraftpe.so", RTLD_LAZY);
-
     return JNI_VERSION_1_2;
 
 }
 
-JNIEXPORT void JNICALL Java_io_mrarm_tml_TML_nativeLoadMod(JNIEnv* env, jclass cl, jstring internalDir) {
-    //
+JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TML_nativeLoadTML(JNIEnv* env, jclass cl, jstring internalDir) {
+    modLoader = std::unique_ptr<ModLoader>(new ModLoader(jniString(env, internalDir)));
+}
+JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TML_nativeAddAllModsFromDir(JNIEnv* env, jclass cl, jstring dir) {
+    modLoader->addAllModsFromDirectory(jniString(env, dir));
+}
+JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TML_nativeLoadMods(JNIEnv* env, jclass cl) {
+    modLoader->resolveDependenciesAndLoad();
 }
 
 __attribute__ ((visibility ("default"))) void mod_init() {

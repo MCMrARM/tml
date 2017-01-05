@@ -13,9 +13,12 @@ using namespace tml;
 const char* ModLoader::MODLOADER_PKGID = "io.mrarm:tml";
 
 ModLoader::ModLoader(std::string internalDir) : internalDir(internalDir), loaderLog(this, "TML") {
+    if (internalDir[internalDir.length() - 1] != '/')
+        internalDir += "/";
     mkdir(internalDir.c_str(), 0700);
     mkdir((internalDir + "mods/").c_str(), 0700);
-    loaders["native"] = {nullptr, std::unique_ptr<ModCodeLoader>(new NativeModCodeLoader(*this, internalDir + "cache/native"))};
+    loaders["native"] = {nullptr,
+                         std::unique_ptr<ModCodeLoader>(new NativeModCodeLoader(*this, internalDir + "cache/native"))};
     hookManager = new HookManager(this);
 }
 
@@ -91,7 +94,7 @@ void ModLoader::resolveDependenciesAndLoad() {
     }
     loaderLog.trace("Loading mod code...");
     for (auto& modVersions : mods) {
-        for (auto it = modVersions.second.begin(); it != modVersions.second.end(); ) {
+        for (auto it = modVersions.second.begin(); it != modVersions.second.end();) {
             if (!it->second->getMeta().areAllDependenciesResolved()) {
                 loaderLog.error("Not loading mod %s - failed to resolve some dependencies", modVersions.first.c_str());
                 // remove it from the list
@@ -105,12 +108,18 @@ void ModLoader::resolveDependenciesAndLoad() {
 
     loaderLog.trace("Initializing hook system...");
     mcpeLib = dlopen("libminecraftpe.so", RTLD_LAZY);
+    if (mcpeLib == nullptr)
+        throw std::runtime_error("Failed to dlopen libminecraftpe.so");
     hookManager->updateLoadedLibs();
 
     loaderLog.trace("Initializing mods...");
     for (const auto& modVersions : mods) {
         for (const auto& mod : modVersions.second) {
-            mod.second->init();
+            try {
+                mod.second->init();
+            } catch (std::exception e) {
+                loaderLog.error("Failed to init mod %s: %s", modVersions.first.c_str(), e.what());
+            }
         }
     }
 }
