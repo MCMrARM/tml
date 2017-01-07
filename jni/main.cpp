@@ -32,14 +32,20 @@ JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {
 
 }
 
-JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TML_nativeLoadTML(JNIEnv* env, jclass cl, jstring internalDir) {
+JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeLoadTML(JNIEnv* env, jclass cl, jstring internalDir) {
     modLoader = std::unique_ptr<ModLoader>(new ModLoader(jniString(env, internalDir)));
 }
-JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TML_nativeAddAllModsFromDir(JNIEnv* env, jclass cl, jstring dir) {
+JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeAddAllModsFromDir(JNIEnv* env, jclass cl, jstring dir) {
     modLoader->addAllModsFromDirectory(jniString(env, dir));
 }
-JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TML_nativeLoadMods(JNIEnv* env, jclass cl) {
+JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeLoadMods(JNIEnv* env, jclass cl) {
     modLoader->resolveDependenciesAndLoad();
+}
+JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeSetAssetManager(JNIEnv* env, jclass cl,
+                                                                                           jobject assetMgr) {
+    void* lib = dlopen("libassetpatch.so", RTLD_LAZY);
+    void (*func)(JNIEnv*, jobject) = (void (*)(JNIEnv*, jobject)) dlsym(lib, "tml_set_assetmanager");
+    func(env, assetMgr);
 }
 
 __attribute__ ((visibility ("default"))) void mod_init() {
