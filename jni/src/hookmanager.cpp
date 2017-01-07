@@ -101,8 +101,10 @@ void HookManager::updateLoadedLibs() {
 HookManager::LibraryInfo* HookManager::createLibraryInfo(std::string const& path) {
     LibraryInfo* li = new LibraryInfo();
     li->ptr = dlopen(path.c_str(), RTLD_LAZY);
-    if (li->ptr == nullptr)
+    if (li->ptr == nullptr) {
+        log.trace("Not creating library info for: %s - error: %s", path.c_str(), dlerror());
         return nullptr;
+    }
     li->path = path;
 
     log.trace("Creating library info for: %s", path.c_str());
@@ -199,10 +201,11 @@ void HookManager::destroyLibraryInfo(LibraryInfo* libraryInfo) {
     librariesByPath.erase(libraryInfo->path);
 }
 
-void HookManager::findSymbolAndAddTo(std::vector<void*>& arr, Elf32_Addr base, Elf32_Addr off, Elf32_Addr size,
-                                     void* sym) {
-    if (off == 0)
+void HookManager::findSymbolAndAddTo(std::vector<void*>& arr, Elf32_Addr base, Elf32_Addr soSize, Elf32_Addr off,
+                                     Elf32_Addr size, void* sym) {
+    if (off == 0 || off >= soSize)
         return;
+    size = std::min(size, soSize - off);
     unsigned long addr = base + off + 4;
     while (addr < base + off + size) {
         if (*((void**) addr) == sym) {
@@ -232,24 +235,28 @@ tml::HookManager::HookSymbol* HookManager::getSymbol(void* lib, std::string cons
     HookSymbol* hookSymbol;
     if (symbols.count(p) > 0) {
         hookSymbol = symbols.at(p);
-        if (hookSymbol->initialized)
+        if (hookSymbol->initialized || !initialize)
             return hookSymbol;
     } else {
-        void* sym = dlsym_weak(lib, str.c_str());
+        void* sym = dlsym(lib, str.c_str());
+        if (sym == nullptr)
+            sym = dlsym_weak(lib, str.c_str());
         if (sym == nullptr)
             throw std::runtime_error("Failed to find symbol " + str);
         hookSymbol = new HookSymbol();
         hookSymbol->libNameDesc = p;
         hookSymbol->usedSymbol = hookSymbol->originalSym = sym;
+        if (!initialize)
+            return hookSymbol;
     }
 
     for (auto& lp : libraries) {
         soinfo* si = (soinfo*) lp.second->ptr;
-        findSymbolAndAddTo(hookSymbol->usage[lp.second->ptr], si->base, lp.second->gotOff, lp.second->gotSize,
-                           hookSymbol->originalSym);
-        findSymbolAndAddTo(hookSymbol->usage[lp.second->ptr], si->base, lp.second->gotPltOff, lp.second->gotPltSize,
-                           hookSymbol->originalSym);
-        findSymbolAndAddTo(hookSymbol->usage[lp.second->ptr], si->base, lp.second->dataRelRoOff,
+        findSymbolAndAddTo(hookSymbol->usage[lp.second->ptr], si->base, si->size, lp.second->gotOff,
+                           lp.second->gotSize, hookSymbol->originalSym);
+        findSymbolAndAddTo(hookSymbol->usage[lp.second->ptr], si->base, si->size, lp.second->gotPltOff,
+                           lp.second->gotPltSize, hookSymbol->originalSym);
+        findSymbolAndAddTo(hookSymbol->usage[lp.second->ptr], si->base, si->size, lp.second->dataRelRoOff,
                            lp.second->dataRelRoSize, hookSymbol->originalSym);
     }
     hookSymbol->initialized = true;

@@ -16,7 +16,8 @@ class HookManager {
 private:
     Log log;
 
-    void findSymbolAndAddTo(std::vector<void*>& arr, Elf32_Addr base, Elf32_Addr off, Elf32_Addr size, void* sym);
+    void findSymbolAndAddTo(std::vector<void*>& arr, Elf32_Addr base, Elf32_Addr soSize, Elf32_Addr off,
+                            Elf32_Addr size, void* sym);
 
 public:
     struct LibraryMemMap {
