@@ -98,7 +98,7 @@ std::unique_ptr<ModLoadedCode> NativeModCodeLoader::loadCode(Mod& mod, std::stri
     std::string prefix = "native/armeabi-v7a/";
 #endif
     if (mod.getResources().contains(prefix + path))
-        path = prefix + "lib" + path + ".so";
+        path = prefix + path;
     else if (mod.getResources().contains(prefix + path + ".so"))
         path = prefix + path + ".so";
     else if (mod.getResources().contains(prefix + "lib" + path + ".so"))
