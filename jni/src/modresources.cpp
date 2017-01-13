@@ -15,6 +15,14 @@ bool DirectoryModResources::contains(const std::string& path) {
     return FileUtil::fileExists(basePath + "/" + path);
 }
 
+std::vector<ModResources::DirectoryFile> DirectoryModResources::list(const std::string& path) {
+    std::vector<DirectoryFile> ret;
+    for (const auto& e : FileUtil::getFilesIn(basePath + "/" + path)) {
+        ret.push_back({e.name, e.isDirectory});
+    }
+    return std::move(ret);
+}
+
 long long DirectoryModResources::getLastModifyTime(const std::string& path) {
     return (long long) FileUtil::getTimestamp(basePath + "/" + path);
 }
@@ -45,6 +53,29 @@ std::unique_ptr<std::istream> ZipModResources::open(const std::string& path) {
 
 bool ZipModResources::contains(const std::string& path) {
     return fileMap.count(path) > 0;
+}
+
+std::vector<ModResources::DirectoryFile> ZipModResources::list(const std::string& path) {
+    std::string prefix = path;
+    if (prefix[prefix.length() - 1] != '/')
+        prefix = prefix.substr(0, prefix.length() - 1);
+    std::map<std::string, bool> m; // { name => isDir }
+    for (const auto& p : fileMap) {
+        if (p.first.length() > prefix.length() && memcmp(p.first.data(), prefix.data(), prefix.length()) == 0) {
+            std::string name = p.first.substr(prefix.length());
+            auto iof = name.find('/');
+            if (iof != std::string::npos) {
+                m[name.substr(0, iof)] = true;
+            } else {
+                m[name] = false;
+            }
+        }
+    }
+    std::vector<DirectoryFile> ret;
+    for (const auto& p : m) {
+        ret.push_back({p.first, p.second});
+    }
+    return std::move(ret);
 }
 
 long long ZipModResources::getLastModifyTime(const std::string& path) {
