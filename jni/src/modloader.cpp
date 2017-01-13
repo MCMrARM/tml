@@ -4,6 +4,7 @@
 #include <dlfcn.h>
 #include <tml/mod.h>
 #include <sys/stat.h>
+#include <iterator>
 #include "fileutil.h"
 #include "nativemodcodeloader.h"
 #include "hookmanager.h"
@@ -63,13 +64,20 @@ void ModLoader::addModFromDirectory(std::string path) {
     addMod(std::move(res));
 }
 
+void ModLoader::addModFromZip(std::string path) {
+    loaderLog.info("Loading mod from zip: %s", path.c_str());
+    std::unique_ptr<ModResources> res(new ZipModResources(path));
+    addMod(std::move(res));
+}
+
 void ModLoader::addAllModsFromDirectory(std::string path) {
     loaderLog.info("Loading all mod from directory: %s", path.c_str());
     for (auto& f : FileUtil::getFilesIn(path)) {
         if (f.isDirectory) {
             addModFromDirectory(path + "/" + f.name);
+        } else if (f.name.length() >= 4 && memcmp(&f.name[f.name.length() - 4], ".tbp", 4) == 0) {
+            addModFromZip(path + "/" + f.name);
         }
-        // TODO: load zipped mods
     }
 }
 

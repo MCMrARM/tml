@@ -4,3 +4,6 @@
 [submodule "jni/lib/keccak"]
 	path = jni/lib/keccak
 	url = https://github.com/gvanas/KeccakCodePackage
+[submodule "jni/lib/libzip"]
+	path = jni/lib/libzip
+	url = https://github.com/MCMrARM/libzip

@@ -2,7 +2,10 @@
 
 #include <string>
 #include <vector>
+#include <map>
 #include <memory>
+
+struct zip;
 
 namespace tml {
 
@@ -18,18 +21,18 @@ public:
     /**
      * Opens a stream with the specific file.
      */
-    virtual std::unique_ptr<std::istream> open(std::string path) = 0;
+    virtual std::unique_ptr<std::istream> open(const std::string& path) = 0;
 
     /**
      * Checks if the specific file exists.
      */
-    virtual bool contains(std::string path) = 0;
+    virtual bool contains(const std::string& path) = 0;
 
     /**
      * Return the last modification time. If you aren't able to determine this, return 0.
      * This is only important when getting ready for production. In testing it should be fast enough to return zero.
      */
-    virtual long long getLastModifyTime(std::string path) { return 0; }
+    virtual long long getLastModifyTime(const std::string& path) { return 0; }
 
 };
 
@@ -39,13 +42,36 @@ protected:
     std::string basePath;
 
 public:
-    DirectoryModResources(std::string basePath) : basePath(basePath) { }
+    DirectoryModResources(const std::string& basePath) : basePath(basePath) { }
 
-    virtual std::unique_ptr<std::istream> open(std::string path);
+    virtual std::unique_ptr<std::istream> open(const std::string& path);
 
-    virtual bool contains(std::string path);
+    virtual bool contains(const std::string& path);
 
-    virtual long long getLastModifyTime(std::string path);
+    virtual long long getLastModifyTime(const std::string& path);
+
+};
+
+class ZipModResources : public ModResources {
+
+protected:
+    zip* file = nullptr;
+    long long fileLastModify;
+    std::map<std::string, uint64_t> fileMap;
+
+public:
+    ZipModResources(const std::string& path);
+
+    ~ZipModResources();
+
+    virtual std::unique_ptr<std::istream> open(const std::string& path);
+
+    virtual bool contains(const std::string& path);
+
+    /**
+     * Always returns the modification time of the zip.
+     */
+    virtual long long getLastModifyTime(const std::string& path);
 
 };
 
