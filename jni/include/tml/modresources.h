@@ -9,7 +9,6 @@ struct zip;
 
 namespace tml {
 
-
 /**
  * The class resposible for fetching the mod's files. You generally will not need to subclass it, unless you want
  * to make a custom mod loader.
