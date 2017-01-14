@@ -27,7 +27,7 @@ ModLoader::~ModLoader() {
     delete hookManager;
 }
 
-Mod* ModLoader::findMod(std::string id, const ModDependencyVersionList& versions) {
+Mod* ModLoader::findMod(std::string id, const ModDependencyVersionList& versions) const {
     if (mods.count(id) <= 0)
         return nullptr;
     Mod* newestMod = nullptr;
@@ -79,6 +79,16 @@ void ModLoader::addAllModsFromDirectory(std::string path) {
             addModFromZip(path + "/" + f.name);
         }
     }
+}
+
+std::vector<Mod*> ModLoader::getMods() const {
+    std::vector<Mod*> ret;
+    for (const auto& modVersion : mods) {
+        for (const auto& mod : modVersion.second) {
+            ret.push_back(mod.second.get());
+        }
+    }
+    return std::move(ret);
 }
 
 void ModLoader::resolveDependenciesAndLoad() {

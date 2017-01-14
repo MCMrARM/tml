@@ -47,12 +47,14 @@ public:
 
     ModCodeLoader* getCodeLoader(std::string name);
 
-    Mod* findMod(std::string id, const ModDependencyVersionList& versions);
+    Mod* findMod(std::string id, const ModDependencyVersionList& versions) const;
 
     void addMod(std::unique_ptr<ModResources> resources);
     void addModFromDirectory(std::string path);
     void addModFromZip(std::string path);
     void addAllModsFromDirectory(std::string path);
+
+    std::vector<Mod*> getMods() const;
 
     void resolveDependenciesAndLoad();
 

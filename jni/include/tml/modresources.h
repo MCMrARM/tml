@@ -40,6 +40,12 @@ public:
     virtual std::vector<DirectoryFile> list(const std::string& path) { return std::vector<DirectoryFile>(); }
 
     /**
+     * Get the specified file's size (in bytes). If the file doesn't exist on an error occurs, this function will
+     * return -1.
+     */
+    virtual long long getSize(const std::string& path) = 0;
+
+    /**
      * Return the last modification time. If you aren't able to determine this, return 0.
      * This is only important when getting ready for production. In testing it should be fast enough to return zero.
      */
@@ -60,6 +66,8 @@ public:
     virtual bool contains(const std::string& path);
 
     virtual std::vector<DirectoryFile> list(const std::string& path);
+
+    virtual long long getSize(const std::string& path);
 
     virtual long long getLastModifyTime(const std::string& path);
 
@@ -82,6 +90,8 @@ public:
     virtual bool contains(const std::string& path);
 
     virtual std::vector<DirectoryFile> list(const std::string& path);
+
+    virtual long long getSize(const std::string& path);
 
     /**
      * Always returns the modification time of the zip.

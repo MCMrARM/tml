@@ -41,6 +41,11 @@ public:
     Mod(ModLoader* loader, std::unique_ptr<ModResources> resources);
 
     /**
+     * Returns a pointer to the ModLoader class which has loaded this mod.
+     */
+    ModLoader& getLoader() { return *loader; }
+
+    /**
      * Returns the mod's associated resources object, using which you can access your packaged files.
      */
     ModResources& getResources() { return *resources; }

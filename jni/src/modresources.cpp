@@ -23,6 +23,10 @@ std::vector<ModResources::DirectoryFile> DirectoryModResources::list(const std::
     return std::move(ret);
 }
 
+long long DirectoryModResources::getSize(const std::string& path) {
+    return FileUtil::getSize(basePath + "/" + path);
+}
+
 long long DirectoryModResources::getLastModifyTime(const std::string& path) {
     return (long long) FileUtil::getTimestamp(basePath + "/" + path);
 }
@@ -76,6 +80,15 @@ std::vector<ModResources::DirectoryFile> ZipModResources::list(const std::string
         ret.push_back({p.first, p.second});
     }
     return std::move(ret);
+}
+
+long long ZipModResources::getSize(const std::string& path) {
+    if (fileMap.count(path) <= 0)
+        return -1;
+    zip_stat_t st;
+    if (zip_stat_index(file, fileMap.at(path), 0, &st))
+        return -1;
+    return st.size;
 }
 
 long long ZipModResources::getLastModifyTime(const std::string& path) {

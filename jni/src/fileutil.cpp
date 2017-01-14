@@ -23,6 +23,13 @@ bool FileUtil::fileExists(std::string path) {
     return (stat(path.c_str(), &buf) == 0);
 }
 
+long long FileUtil::getSize(std::string path) {
+    struct stat buf;
+    if (stat(path.c_str(), &buf) != 0)
+        return -1;
+    return buf.st_size;
+}
+
 unsigned long FileUtil::getTimestamp(std::string path) {
     struct stat buf;
     if (stat(path.c_str(), &buf) != 0)

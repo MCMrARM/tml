@@ -27,6 +27,11 @@ public:
     static bool fileExists(std::string path);
 
     /**
+     * Returns the file size, or -1 on failure.
+     */
+    static long long getSize(std::string path);
+
+    /**
      * Returns when the file was last modified, or 0 on failure.
      */
     static unsigned long getTimestamp(std::string path);
