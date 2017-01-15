@@ -22,6 +22,8 @@ private:
     std::map<std::string, std::map<ModVersion, std::unique_ptr<Mod>>> mods;
     std::vector<std::pair<Mod*, std::unique_ptr<LogPrinter>>> logPrinters;
 
+    bool loadMod(Mod& mod);
+
 protected:
     std::string internalDir;
     Log loaderLog;

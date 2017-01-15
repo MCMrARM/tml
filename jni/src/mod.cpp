@@ -13,6 +13,8 @@ Mod::Mod(ModLoader* loader, std::unique_ptr<ModResources> resources) : loader(lo
 }
 
 void Mod::load() {
+    if (loaded)
+        return;
     StaticHookManager::currentMod = this;
     for (const ModCode& code : meta.getCode()) {
         ModCodeLoader* codeLoader = loader->getCodeLoader(code.loaderName);
@@ -30,9 +32,12 @@ void Mod::load() {
                                    code.loaderName.c_str());
     }
     StaticHookManager::currentMod = nullptr;
+    loaded = true;
 }
 
 void Mod::init() {
+    if (initialized)
+        return;
     for (auto& hk : queuedHooks) {
         void* lib = getMCPELibrary();
         if (hk.lib.length() > 0)
@@ -43,6 +48,7 @@ void Mod::init() {
     for (auto& code : loadedCode) {
         code->init();
     }
+    initialized = true;
 }
 
 void* Mod::getMCPELibrary() const {

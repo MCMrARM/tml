@@ -91,6 +91,18 @@ std::vector<Mod*> ModLoader::getMods() const {
     return std::move(ret);
 }
 
+bool ModLoader::loadMod(Mod& mod) {
+    if (!mod.getMeta().areAllDependenciesResolved()) {
+        loaderLog.error("Not loading mod %s - failed to resolve some dependencies", mod.getMeta().getId().c_str());
+        return false;
+    }
+    for (const auto& dep : mod.getMeta().getDependencies())
+        if (!dep.mod->isLoaded())
+            loadMod(*dep.mod);
+    mod.load();
+    return true;
+}
+
 void ModLoader::resolveDependenciesAndLoad() {
     for (const auto& modVersions : mods) {
         for (const auto& mod : modVersions.second) {
@@ -113,13 +125,11 @@ void ModLoader::resolveDependenciesAndLoad() {
     loaderLog.trace("Loading mod code...");
     for (auto& modVersions : mods) {
         for (auto it = modVersions.second.begin(); it != modVersions.second.end();) {
-            if (!it->second->getMeta().areAllDependenciesResolved()) {
-                loaderLog.error("Not loading mod %s - failed to resolve some dependencies", modVersions.first.c_str());
+            if (!it->second->isLoaded() && !loadMod(*it->second)) {
                 // remove it from the list
                 it = modVersions.second.erase(it);
                 continue;
             }
-            it->second->load();
             it++;
         }
     }

@@ -29,11 +29,14 @@ private:
     std::unique_ptr<ModResources> resources;
     ModMeta meta;
     Log log;
+    bool loaded = false;
+    bool initialized = false;
     std::vector<std::unique_ptr<ModLoadedCode>> loadedCode;
     std::vector<QueuedHook> queuedHooks;
 
     void load();
     void init();
+    bool isLoaded() const { return loaded; }
 
     void queueHook(const std::string& lib, const std::string& sym, void* func, void** orig);
 
