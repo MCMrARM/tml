@@ -33,18 +33,18 @@ public:
 
 }
 
-#define _TInstanceHook(pclass, iname, sym, ret, args...) \
-struct _TInstanceHook_##iname pclass { \
+#define _TInstanceHook(class_inh, pclass, iname, sym, ret, args...) \
+struct _TInstanceHook_##iname class_inh { \
     static ret (_TInstanceHook_##iname::*_original)(args); \
     template <typename ...Params> \
-    ret original(Params&&... params) { return (this->*_original)(std::forward<Params>(params)...); } \
+    static ret original(pclass* _this, Params&&... params) { return (((_TInstanceHook_##iname*) _this)->*_original)(std::forward<Params>(params)...); } \
     ret _hook(args); \
 }; \
 static tml::StaticHookManager::RegisterHook _TRInstanceHook_##iname (#sym, &_TInstanceHook_##iname::_hook, (void**) &_TInstanceHook_##iname::_original); \
 ret (_TInstanceHook_##iname::*_TInstanceHook_##iname::_original)(args); \
 ret _TInstanceHook_##iname::_hook(args)
-#define _TInstanceDefHook(iname, sym, ret, type, args...) _TInstanceHook(: public type, iname, sym, ret, args)
-#define _TInstanceNoDefHook(iname, sym, ret, args...) _TInstanceHook(, iname, sym, ret, args)
+#define _TInstanceDefHook(iname, sym, ret, type, args...) _TInstanceHook(: public type, type, iname, sym, ret, args)
+#define _TInstanceNoDefHook(iname, sym, ret, args...) _TInstanceHook(, void*, iname, sym, ret, args)
 
 #define _TStaticHook(pclass, iname, sym, ret, args...) \
 struct _TStaticHook_##iname pclass { \
