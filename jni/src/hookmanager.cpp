@@ -287,8 +287,10 @@ tml::HookManager::HookInfo* HookManager::hook(void* lib, std::string const& sym,
     if (hookInfo->parent != nullptr)
         hookInfo->parent->child = hookInfo;
     if (hookInfo->userOrgSym != nullptr)
-        *hookInfo->userOrgSym = hookInfo->symbol->usedSymbol;
+        *hookInfo->userOrgSym = (hookInfo->parent != nullptr ? hookInfo->parent->overrideSym :
+                                 hookInfo->symbol->usedSymbol);
     hookInfo->symbol->useSymbol(this, override);
+    hookInfo->symbol->hook = hookInfo;
     return hookInfo;
 }
 
