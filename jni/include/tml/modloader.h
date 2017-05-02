@@ -59,6 +59,7 @@ public:
     std::vector<Mod*> getMods() const;
 
     void resolveDependenciesAndLoad();
+    void updateHookManagerLoadedLibs();
 
 };
 

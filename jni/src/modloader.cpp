@@ -122,6 +122,13 @@ void ModLoader::resolveDependenciesAndLoad() {
             }
         }
     }
+
+    loaderLog.trace("Initializing hook system...");
+    mcpeLib = dlopen("libminecraftpe.so", RTLD_LAZY);
+    if (mcpeLib == nullptr)
+        throw std::runtime_error("Failed to dlopen libminecraftpe.so");
+    hookManager->updateLoadedLibs();
+
     loaderLog.trace("Loading mod code...");
     for (auto& modVersions : mods) {
         for (auto it = modVersions.second.begin(); it != modVersions.second.end();) {
@@ -134,10 +141,7 @@ void ModLoader::resolveDependenciesAndLoad() {
         }
     }
 
-    loaderLog.trace("Initializing hook system...");
-    mcpeLib = dlopen("libminecraftpe.so", RTLD_LAZY);
-    if (mcpeLib == nullptr)
-        throw std::runtime_error("Failed to dlopen libminecraftpe.so");
+    loaderLog.trace("Updating hook system with the mod libraries...");
     hookManager->updateLoadedLibs();
 
     loaderLog.trace("Initializing mods...");
@@ -150,6 +154,10 @@ void ModLoader::resolveDependenciesAndLoad() {
             }
         }
     }
+}
+
+void ModLoader::updateHookManagerLoadedLibs() {
+    hookManager->updateLoadedLibs();
 }
 
 ModCodeLoader* ModLoader::getCodeLoader(std::string name) {

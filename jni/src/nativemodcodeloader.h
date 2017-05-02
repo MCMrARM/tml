@@ -14,7 +14,7 @@ protected:
     void* lib;
 
 public:
-    NativeModLoadedCode(Mod& mod, void* lib) : ModLoadedCode(mod), lib(lib) { }
+    NativeModLoadedCode(Mod& mod, void* lib);
 
     virtual ~NativeModLoadedCode() { }
     virtual void init();

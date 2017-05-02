@@ -124,6 +124,12 @@ std::unique_ptr<ModLoadedCode> NativeModCodeLoader::loadCode(Mod& mod, std::stri
     return std::unique_ptr<ModLoadedCode>(new NativeModLoadedCode(mod, lib));
 }
 
+NativeModLoadedCode::NativeModLoadedCode(Mod& mod, void* lib) : ModLoadedCode(mod), lib(lib) {
+    int (* initSym)(Mod&) = (int (*)(Mod&)) dlsym(lib, "tml_preinit");
+    if (initSym != nullptr)
+        initSym(mod);
+}
+
 void NativeModLoadedCode::init() {
     int (* initSym)(Mod&) = (int (*)(Mod&)) dlsym(lib, "tml_init");
     if (initSym != nullptr)
