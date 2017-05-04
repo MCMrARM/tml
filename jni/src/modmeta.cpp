@@ -184,7 +184,7 @@ ModMeta::ModMeta(ModResources& resources) : ModMeta(*resources.open("package.yam
 
 bool ModMeta::areAllDependenciesResolved() const {
     for (auto& dep : dependencies) {
-        if (!dep.mod->getMeta().areAllDependenciesResolved())
+        if (dep.mod == nullptr || !dep.mod->getMeta().areAllDependenciesResolved())
             return false;
     }
     return true;
