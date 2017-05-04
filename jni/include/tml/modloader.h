@@ -26,6 +26,7 @@ private:
 
 protected:
     std::string internalDir;
+    std::string modDataStoragePath;
     Log loaderLog;
     HookManager* hookManager;
     void* mcpeLib;
@@ -60,6 +61,8 @@ public:
 
     void resolveDependenciesAndLoad();
     void updateHookManagerLoadedLibs();
+
+    std::string const& getModDataStoragePath() { return modDataStoragePath; }
 
 };
 

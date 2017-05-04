@@ -18,6 +18,8 @@ ModLoader::ModLoader(std::string internalDir) : internalDir(internalDir), loader
         internalDir += "/";
     mkdir(internalDir.c_str(), 0700);
     mkdir((internalDir + "mods/").c_str(), 0700);
+    modDataStoragePath = internalDir + "mod_data/";
+    mkdir(modDataStoragePath.c_str(), 0700);
     loaders["native"] = {nullptr,
                          std::unique_ptr<ModCodeLoader>(new NativeModCodeLoader(*this, internalDir + "cache/native"))};
     hookManager = new HookManager(this);

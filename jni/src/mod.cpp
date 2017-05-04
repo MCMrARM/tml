@@ -3,13 +3,15 @@
 #include <dlfcn.h>
 #include <tml/modloader.h>
 #include "hookmanager.h"
+#include "fileutil.h"
 
 using namespace tml;
 
 Mod::Mod(ModLoader* loader, std::unique_ptr<ModResources> resources) : loader(loader), resources(std::move(resources)),
                                                                        meta(*this->resources),
                                                                        log(loader, meta.getName()) {
-
+    dataPath = loader->getModDataStoragePath() + meta.getId() + "/";
+    FileUtil::createDirs(dataPath);
 }
 
 void Mod::load() {

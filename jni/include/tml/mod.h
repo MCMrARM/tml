@@ -28,6 +28,7 @@ private:
     ModLoader* loader;
     std::unique_ptr<ModResources> resources;
     ModMeta meta;
+    std::string dataPath;
     Log log;
     bool loaded = false;
     bool initialized = false;
@@ -62,6 +63,11 @@ public:
      * Returns your mod's logger.
      */
     Log& getLog() { return log; }
+
+    /**
+     * Returns a path to a private data storage directory for this mod. This path is guaranteed to end with a slash.
+     */
+    std::string const& getDataStoragePath() const { return dataPath; }
 
     /**
      * Returns a pointer to MCPE's library.
