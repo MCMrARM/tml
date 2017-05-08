@@ -44,7 +44,7 @@ static tml::StaticHookManager::RegisterHook _TRInstanceHook_##iname (#sym, &_TIn
 ret (_TInstanceHook_##iname::*_TInstanceHook_##iname::_original)(args); \
 ret _TInstanceHook_##iname::_hook(args)
 #define _TInstanceDefHook(iname, sym, ret, type, args...) _TInstanceHook(: public type, type, iname, sym, ret, args)
-#define _TInstanceNoDefHook(iname, sym, ret, args...) _TInstanceHook(, void*, iname, sym, ret, args)
+#define _TInstanceNoDefHook(iname, sym, ret, args...) _TInstanceHook(, void, iname, sym, ret, args)
 
 #define _TStaticHook(pclass, iname, sym, ret, args...) \
 struct _TStaticHook_##iname pclass { \
