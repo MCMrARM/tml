@@ -23,6 +23,7 @@ private:
     std::vector<std::pair<Mod*, std::unique_ptr<LogPrinter>>> logPrinters;
 
     bool loadMod(Mod& mod);
+    void initMod(Mod& mod);
 
 protected:
     std::string internalDir;

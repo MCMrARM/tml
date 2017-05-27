@@ -105,6 +105,17 @@ bool ModLoader::loadMod(Mod& mod) {
     return true;
 }
 
+void ModLoader::initMod(Mod &mod) {
+    for (const auto& dep : mod.getMeta().getDependencies())
+        if (!dep.mod->initialized)
+            initMod(*dep.mod);
+    try {
+        mod.init();
+    } catch (std::exception e) {
+        loaderLog.error("Failed to init mod %s: %s", mod.getMeta().getId().c_str(), e.what());
+    }
+}
+
 void ModLoader::resolveDependenciesAndLoad() {
     for (const auto& modVersions : mods) {
         for (const auto& mod : modVersions.second) {
@@ -149,11 +160,7 @@ void ModLoader::resolveDependenciesAndLoad() {
     loaderLog.trace("Initializing mods...");
     for (const auto& modVersions : mods) {
         for (const auto& mod : modVersions.second) {
-            try {
-                mod.second->init();
-            } catch (std::exception e) {
-                loaderLog.error("Failed to init mod %s: %s", modVersions.first.c_str(), e.what());
-            }
+            initMod(*mod.second);
         }
     }
 }
