@@ -4,6 +4,7 @@
 #include <vector>
 #include <map>
 #include <memory>
+#include <android/asset_manager.h>
 
 struct zip;
 
@@ -97,6 +98,31 @@ public:
      * Always returns the modification time of the zip.
      */
     virtual long long getLastModifyTime(const std::string& path);
+
+};
+
+class AndroidAssetsModResources : public ModResources {
+
+protected:
+    AAssetManager* manager = nullptr;
+    const std::string& basePath;
+    long long lastModifyTime;
+
+public:
+    AndroidAssetsModResources(AAssetManager* manager, const std::string& basePath, long long lastModifyTime);
+
+    virtual std::unique_ptr<std::istream> open(const std::string& path);
+
+    virtual bool contains(const std::string& path);
+
+    virtual std::vector<DirectoryFile> list(const std::string& path);
+
+    virtual long long getSize(const std::string& path);
+
+    /**
+     * Always returns the modification time of the zip.
+     */
+    virtual long long getLastModifyTime(const std::string& path) { return lastModifyTime; }
 
 };
 

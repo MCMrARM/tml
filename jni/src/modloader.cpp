@@ -72,6 +72,12 @@ void ModLoader::addModFromZip(std::string path) {
     addMod(std::move(res));
 }
 
+void ModLoader::addModFromAssets(std::string path) {
+    loaderLog.info("Loading mod from directory: %s", path.c_str());
+    std::unique_ptr<ModResources> res(new AndroidAssetsModResources(assetManager, path, assetsLastModifyTime));
+    addMod(std::move(res));
+}
+
 void ModLoader::addAllModsFromDirectory(std::string path) {
     loaderLog.info("Loading all mod from directory: %s", path.c_str());
     for (auto& f : FileUtil::getFilesIn(path)) {
@@ -81,6 +87,11 @@ void ModLoader::addAllModsFromDirectory(std::string path) {
             addModFromZip(path + "/" + f.name);
         }
     }
+}
+
+void ModLoader::setAndroidAssetManager(AAssetManager* manager, long long lastModifyTime) {
+    assetManager = manager;
+    assetsLastModifyTime = lastModifyTime;
 }
 
 std::vector<Mod*> ModLoader::getMods() const {

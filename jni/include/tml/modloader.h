@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <android/asset_manager.h>
 #include "log.h"
 #include "modmeta.h"
 
@@ -31,6 +32,8 @@ protected:
     Log loaderLog;
     HookManager* hookManager;
     void* mcpeLib;
+    AAssetManager* assetManager;
+    long long assetsLastModifyTime;
 
     friend class Mod;
 
@@ -56,7 +59,10 @@ public:
     void addMod(std::unique_ptr<ModResources> resources);
     void addModFromDirectory(std::string path);
     void addModFromZip(std::string path);
+    void addModFromAssets(std::string path);
     void addAllModsFromDirectory(std::string path);
+
+    void setAndroidAssetManager(AAssetManager* manager, long long lastModifyTime);
 
     std::vector<Mod*> getMods() const;
 

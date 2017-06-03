@@ -2,6 +2,7 @@
 
 #include <fstream>
 #include <zip.h>
+#include <android/asset_manager.h>
 #include "fileutil.h"
 #include "modresources_private.h"
 
@@ -105,6 +106,66 @@ ZipStreamBuffer::int_type ZipStreamBuffer::underflow() {
         return std::char_traits<char>::eof();
     if (this->gptr() == this->egptr()) {
         size_t size = (size_t) zip_fread(file, buffer.data(), buffer.size());
+        this->setg(buffer.data(), buffer.data(), buffer.data() + size);
+    }
+    return this->gptr() == this->egptr()
+           ? std::char_traits<char>::eof()
+           : std::char_traits<char>::to_int_type(*this->gptr());
+
+}
+
+AndroidAssetsModResources::AndroidAssetsModResources(AAssetManager* manager, const std::string& basePath,
+                                                     long long lastModifyTime) : manager(manager), basePath(basePath),
+                                                                                 lastModifyTime(lastModifyTime) {
+    //
+}
+
+std::unique_ptr<std::istream> AndroidAssetsModResources::open(const std::string& path) {
+    AAsset* asset = AAssetManager_open(manager, (basePath + "/" + path).c_str(), AASSET_MODE_UNKNOWN);
+    return std::unique_ptr<std::istream>(new AAssetInputStream(asset));
+}
+
+bool AndroidAssetsModResources::contains(const std::string& path) {
+    AAsset* asset = AAssetManager_open(manager, (basePath + "/" + path).c_str(), AASSET_MODE_UNKNOWN);
+    if (asset != nullptr) {
+        AAsset_close(asset);
+        return true;
+    }
+    return false;
+}
+
+std::vector<ModResources::DirectoryFile> AndroidAssetsModResources::list(const std::string& path) {
+    AAssetDir* dir = AAssetManager_openDir(manager, (basePath + "/" + path).c_str());
+    if (dir == nullptr)
+        return std::vector<DirectoryFile>();
+    std::vector<DirectoryFile> ret;
+    const char* nextFilename;
+    while ((nextFilename = AAssetDir_getNextFileName(dir)) != nullptr) {
+        ret.push_back({nextFilename, false}); // TODO: And directories?
+    }
+    return ret;
+}
+
+long long AndroidAssetsModResources::getSize(const std::string& path) {
+    AAsset* asset = AAssetManager_open(manager, (basePath + "/" + path).c_str(), AASSET_MODE_UNKNOWN);
+    long long ret = -1;
+    if (asset != nullptr) {
+        AAsset_getLength64(asset);
+        AAsset_close(asset);
+    }
+    return ret;
+}
+
+AAssetStreamBuffer::~AAssetStreamBuffer() {
+    if (ownsAsset && asset != nullptr)
+        AAsset_close(asset);
+}
+
+AAssetStreamBuffer::int_type AAssetStreamBuffer::underflow() {
+    if (asset == nullptr)
+        return std::char_traits<char>::eof();
+    if (this->gptr() == this->egptr()) {
+        size_t size = (size_t) AAsset_read(asset, buffer.data(), buffer.size());
         this->setg(buffer.data(), buffer.data(), buffer.data() + size);
     }
     return this->gptr() == this->egptr()

@@ -35,4 +35,35 @@ public:
 
 };
 
+class AAssetStreamBuffer : public std::streambuf {
+
+private:
+
+    AAsset* asset;
+    bool ownsAsset;
+    std::vector<char> buffer;
+
+    virtual int_type underflow();
+
+public:
+    AAssetStreamBuffer(AAsset* asset, bool ownsAsset = true, size_t buffer_size = 16 * 1024) : asset(asset),
+                                                                                               ownsAsset(ownsAsset) {
+        buffer.resize(buffer_size);
+    }
+
+    ~AAssetStreamBuffer();
+
+};
+
+class AAssetInputStream : public std::istream {
+
+private:
+    AAssetStreamBuffer buf;
+
+public:
+    AAssetInputStream(AAsset* asset, bool ownsAsset = true) : buf(asset, ownsAsset), std::istream(&buf) {
+    }
+
+};
+
 }

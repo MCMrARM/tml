@@ -12,7 +12,7 @@ LOCAL_SRC_FILES := $(MODLOADER_SOURCES:$(LOCAL_PATH)/%=%) $(LIBYAML_SOURCES:$(LO
     $(addprefix lib/libzip/lib/,$(LIBZIP_SOURCES)) main.cpp lib/linkerutils/src/linkerutils.cpp
 LOCAL_C_INCLUDES := $(LOCAL_PATH)/include/ $(LIBYAML_PATH)/include/ $(LIBZIP_PATH)/lib/ $(LIBZIP_PATH)/xcode/ \
     $(LOCAL_PATH)/lib/linkerutils/include
-LOCAL_LDLIBS := -ldl -llog -lz
+LOCAL_LDLIBS := -ldl -llog -lz -landroid
 
 
 LIBKECCAK_PATH := lib/keccak

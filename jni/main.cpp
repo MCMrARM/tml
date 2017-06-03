@@ -4,6 +4,7 @@
 #include <unistd.h>
 #include <tml/mod.h>
 #include <tml/modloader.h>
+#include <android/asset_manager_jni.h>
 
 using namespace tml;
 
@@ -38,10 +39,17 @@ JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeLoadT
 JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeAddAllModsFromDir(JNIEnv* env, jclass cl, jstring dir) {
     modLoader->addAllModsFromDirectory(jniString(env, dir));
 }
+JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeAddAssetMod(JNIEnv* env, jclass cl, jstring mod) {
+    modLoader->addModFromAssets(jniString(env, mod));
+}
 JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeLoadMods(JNIEnv* env, jclass cl) {
     modLoader->resolveDependenciesAndLoad();
 }
-JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeSetAssetManager(JNIEnv* env, jclass cl,
+JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeSetModAssetManager(JNIEnv* env, jclass cl,
+                                                                                           jobject assetMgr, jlong lastModifyTime) {
+    modLoader->setAndroidAssetManager(AAssetManager_fromJava(env, assetMgr), lastModifyTime);
+}
+JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeSetMinecraftAssetManager(JNIEnv* env, jclass cl,
                                                                                            jobject assetMgr) {
     void* lib = dlopen("libassetpatch.so", RTLD_LAZY);
     void (*func)(JNIEnv*, jobject) = (void (*)(JNIEnv*, jobject)) dlsym(lib, "tml_set_assetmanager");
