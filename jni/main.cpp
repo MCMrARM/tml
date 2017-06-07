@@ -47,10 +47,12 @@ JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeLoadM
 }
 JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeSetModAssetManager(JNIEnv* env, jclass cl,
                                                                                            jobject assetMgr, jlong lastModifyTime) {
+    env->NewGlobalRef(assetMgr);
     modLoader->setAndroidAssetManager(AAssetManager_fromJava(env, assetMgr), lastModifyTime);
 }
 JNIEXPORT void JNICALL Java_io_mrarm_mctoolbox_tml_TMLImplementation_nativeSetMinecraftAssetManager(JNIEnv* env, jclass cl,
                                                                                            jobject assetMgr) {
+    env->NewGlobalRef(assetMgr);
     void* lib = dlopen("libassetpatch.so", RTLD_LAZY);
     void (*func)(JNIEnv*, jobject) = (void (*)(JNIEnv*, jobject)) dlsym(lib, "tml_set_assetmanager");
     func(env, assetMgr);

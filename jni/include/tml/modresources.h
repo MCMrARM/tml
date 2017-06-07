@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 #include <map>
+#include <set>
 #include <memory>
 #include <android/asset_manager.h>
 
@@ -105,8 +106,9 @@ class AndroidAssetsModResources : public ModResources {
 
 protected:
     AAssetManager* manager = nullptr;
-    const std::string& basePath;
+    std::string basePath;
     long long lastModifyTime;
+    std::set<std::string> directories;
 
 public:
     AndroidAssetsModResources(AAssetManager* manager, const std::string& basePath, long long lastModifyTime);

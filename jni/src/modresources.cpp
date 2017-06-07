@@ -2,7 +2,7 @@
 
 #include <fstream>
 #include <zip.h>
-#include <android/asset_manager.h>
+
 #include "fileutil.h"
 #include "modresources_private.h"
 
@@ -63,7 +63,7 @@ bool ZipModResources::contains(const std::string& path) {
 std::vector<ModResources::DirectoryFile> ZipModResources::list(const std::string& path) {
     std::string prefix = path;
     if (prefix[prefix.length() - 1] != '/')
-        prefix = prefix.substr(0, prefix.length() - 1);
+        prefix = prefix + "/";
     std::map<std::string, bool> m; // { name => isDir }
     for (const auto& p : fileMap) {
         if (p.first.length() > prefix.length() && memcmp(p.first.data(), prefix.data(), prefix.length()) == 0) {
@@ -117,11 +117,19 @@ ZipStreamBuffer::int_type ZipStreamBuffer::underflow() {
 AndroidAssetsModResources::AndroidAssetsModResources(AAssetManager* manager, const std::string& basePath,
                                                      long long lastModifyTime) : manager(manager), basePath(basePath),
                                                                                  lastModifyTime(lastModifyTime) {
-    //
+    auto directoriesFile = open("directories.txt");
+    if (directoriesFile && *directoriesFile) {
+        std::string line;
+        while (std::getline(*directoriesFile, line)) {
+            if (line.length() > 0) {
+                directories.insert(line);
+            }
+        }
+    }
 }
 
 std::unique_ptr<std::istream> AndroidAssetsModResources::open(const std::string& path) {
-    AAsset* asset = AAssetManager_open(manager, (basePath + "/" + path).c_str(), AASSET_MODE_UNKNOWN);
+    AAsset* asset = AAssetManager_open(manager, (basePath + "/" + path).c_str(), AASSET_MODE_BUFFER);
     return std::unique_ptr<std::istream>(new AAssetInputStream(asset));
 }
 
@@ -135,22 +143,34 @@ bool AndroidAssetsModResources::contains(const std::string& path) {
 }
 
 std::vector<ModResources::DirectoryFile> AndroidAssetsModResources::list(const std::string& path) {
-    AAssetDir* dir = AAssetManager_openDir(manager, (basePath + "/" + path).c_str());
+    std::string sPath = path;
+    if (sPath.length() > 0 && sPath[sPath.length() - 1] == '/')
+        sPath = sPath.substr(0, sPath.size() - 1);
+    AAssetDir* dir = AAssetManager_openDir(manager, (basePath + "/" + sPath).c_str());
     if (dir == nullptr)
         return std::vector<DirectoryFile>();
     std::vector<DirectoryFile> ret;
     const char* nextFilename;
     while ((nextFilename = AAssetDir_getNextFileName(dir)) != nullptr) {
-        ret.push_back({nextFilename, false}); // TODO: And directories?
+        ret.push_back({nextFilename, false});
+    }
+    for (const auto& p : directories) {
+        if (p.length() > sPath.length() + 1 && memcmp(p.data(), sPath.data(), sPath.length()) == 0 &&
+            p[sPath.length()] == '/') {
+            std::string name = p.substr(sPath.length() + 1);
+            if (name.find('/') == std::string::npos) {
+                ret.push_back({name, true});
+            }
+        }
     }
     return ret;
 }
 
 long long AndroidAssetsModResources::getSize(const std::string& path) {
-    AAsset* asset = AAssetManager_open(manager, (basePath + "/" + path).c_str(), AASSET_MODE_UNKNOWN);
+    AAsset* asset = AAssetManager_open(manager, (basePath + "/" + path).c_str(), AASSET_MODE_BUFFER);
     long long ret = -1;
     if (asset != nullptr) {
-        AAsset_getLength64(asset);
+        ret = AAsset_getLength64(asset);
         AAsset_close(asset);
     }
     return ret;
