@@ -10,7 +10,16 @@ void Log::func(const char* msg, ...) { \
     va_end(va); \
 }
 
+#define TMLLogStub(func) \
+void Log::func(const char* msg, ...) { \
+}
+
+#ifdef NDEBUG
+TMLLogStub(trace)
+#else
 TMLLog(trace, LogLevel::TRACE)
+#endif
+
 TMLLog(debug, LogLevel::DEBUG)
 TMLLog(info, LogLevel::INFO)
 TMLLog(warn, LogLevel::WARN)
