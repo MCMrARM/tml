@@ -80,8 +80,12 @@ void HookManager::updateLoadedLibs() {
         if (name[0] != '/')
             continue; // we're not interested in this map
         log.trace("Found map: %s %c%c%c %lx-%lx", name, r, w, x, start, end);
-        if (memcmp(name, "/usr/lib/valgrind/", 18) == 0)
+        if (len >= 18 && memcmp(name, "/usr/lib/valgrind/", 18) == 0)
             continue;
+        if (len >= 12 && memcmp(name, "/system/lib/", 12) == 0 &&
+                !(len >= 25 && memcmp(name, "/system/lib/libandroid.so", 25 + 1) == 0)) {
+            continue;
+        }
         std::string nameStd(name);
         if (libsToFind.count(nameStd) > 0)
             libsToFind.erase(nameStd);
