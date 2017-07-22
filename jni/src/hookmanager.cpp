@@ -82,6 +82,8 @@ void HookManager::updateLoadedLibs() {
         log.trace("Found map: %s %c%c%c %lx-%lx", name, r, w, x, start, end);
         if (len >= 18 && memcmp(name, "/usr/lib/valgrind/", 18) == 0)
             continue;
+        if (len >= 5 && memcmp(name, "/dev/", 5) == 0)
+            continue;
         if (len >= 8 && memcmp(name, "/system/", 8) == 0 &&
                 !(len >= 25 && memcmp(name, "/system/lib/libandroid.so", 25 + 1) == 0)) {
             continue;

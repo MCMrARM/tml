@@ -18,6 +18,10 @@ static std::string jniString(JNIEnv* env, jstring str) {
     return ret;
 }
 
+JavaVM* ModLoader::getJVM() const {
+    return javaVM;
+}
+
 extern "C" {
 
 JNIEXPORT jint JNI_OnLoad(JavaVM* vm, void* reserved) {

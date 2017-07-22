@@ -4,6 +4,7 @@
 #include <vector>
 #include <memory>
 #include <map>
+#include <jni.h>
 #include <android/asset_manager.h>
 #include "log.h"
 #include "modmeta.h"
@@ -47,6 +48,8 @@ public:
     ModLoader(std::string internalDir);
 
     ~ModLoader();
+
+    JavaVM* getJVM() const;
 
     inline Log& getLog() { return loaderLog; }
 

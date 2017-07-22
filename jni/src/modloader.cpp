@@ -73,7 +73,7 @@ void ModLoader::addModFromZip(std::string path) {
 }
 
 void ModLoader::addModFromAssets(std::string path) {
-    loaderLog.info("Loading mod from directory: %s", path.c_str());
+    loaderLog.info("Loading mod from assets: %s", path.c_str());
     std::unique_ptr<ModResources> res(new AndroidAssetsModResources(assetManager, path, assetsLastModifyTime));
     addMod(std::move(res));
 }
